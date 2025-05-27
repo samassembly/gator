@@ -1,44 +1,41 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
+
 	"github.com/samassembly/gator/internal/config"
-	"github.com/samassembly/gator/internal/app"
 )
 
 type state struct {
-	Configuration *Config
+	cfg *config.Config
 }
 
 func main() {
-	s := state{}
-	s.Configuration, err := config.Read()
+	cfg, err := config.Read()
 	if err != nil {
 		log.Fatalf("error reading config: %v", err)
 	}
-	fmt.Printf("Read config: %+v\n", s.Configuration)
 
-	cmds := app.Commands{}
-	cmds.Cmds = make(map[string]func(*state, app.command) error)
+	programState := &state{
+		cfg: &cfg,
+	}
 
-	cmds.Register("login", app.handlerLogin)
+	cmds := commands{
+		registeredCommands: make(map[string]func(*state, command) error),
+	}
+	cmds.register("login", handlerLogin)
 
-	args := os.Args
-	if len(args) < 2 {
-		log.Fatalf("Error, no command provided")
+	if len(os.Args) < 2 {
+		log.Fatal("Usage: cli <command> [args...]")
 		return
 	}
 
-	command := app.Command{
-		Name: args[0]
-		Arguments: args[1:]
-	}
+	cmdName := os.Args[1]
+	cmdArgs := os.Args[2:]
 
-	err := app.run(s, command)
+	err = cmds.run(programState, command{Name: cmdName, Args: cmdArgs})
 	if err != nil {
-		log.Fatalf("Error: %s", err)
+		log.Fatal(err)
 	}
-	
 }
