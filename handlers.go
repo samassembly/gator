@@ -5,6 +5,7 @@ import (
 	"time"
 	"context"
 	"github.com/samassembly/gator/internal/database"
+	"github.com/samassembly/gator/internal/rss"
 	"github.com/google/uuid"
 
 )
@@ -73,6 +74,50 @@ func handlerUsers(s *state, cmd command) error {
 		}
 		fmt.Printf("* %s\n", user.Name)
 	}
+	return nil
+}
+
+func handlerAgg(s *state, cmd command) error {
+	feed, err := rss.FetchFeed(context.Background(), "https://www.wagslane.dev/index.xml")
+	if err != nil {
+		fmt.Errorf("Failed to fetch feed: %v", err)
+	}
+	fmt.Printf("%v", feed)
+	return nil
+}
+
+func handlerAddFeed(s *state, cmd command) error {
+	user, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
+	if err != nil {
+		return fmt.Errorf("Could not find current user: %v", err)
+	}
+	userid := user.ID
+
+	if len(cmd.Args) != 2 {
+		return fmt.Errorf("usage: %s <name> <url>", cmd.Name)
+	}
+
+	id := uuid.New()
+	created_at := time.Now()
+	updated_at := time.Now()
+	name := cmd.Args[0]
+	url := cmd.Args[1]
+
+	create_args := database.CreateFeedParams{
+		ID: id,
+		CreatedAt: created_at,
+		UpdatedAt: updated_at,
+		Name: name,
+		Url: url,
+		UserID: userid, 
+	}
+
+	feed, err := s.db.CreateFeed(context.Background(), create_args)
+	if err != nil {
+		return fmt.Errorf("Failed to add feed to database: %v\n", err)
+	}
+
+	fmt.Printf("Feed added to Database: %v\n", feed)
 	return nil
 }
 
