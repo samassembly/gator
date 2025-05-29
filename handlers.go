@@ -86,11 +86,7 @@ func handlerAgg(s *state, cmd command) error {
 	return nil
 }
 
-func handlerAddFeed(s *state, cmd command) error {
-	user, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
-	if err != nil {
-		return fmt.Errorf("Could not find current user: %v", err)
-	}
+func handlerAddFeed(s *state, cmd command, user database.User) error {
 	userid := user.ID
 
 	if len(cmd.Args) != 2 {
@@ -146,14 +142,9 @@ func handlerFeeds(s *state, cmd command) error {
 	return nil
 }
 
-func handlerFollow(s *state, cmd command) error {
+func handlerFollow(s *state, cmd command, user database.User) error {
 	if len(cmd.Args) != 1 {
 		return fmt.Errorf("usage: %s <url>", cmd.Name)
-	}
-
-	user, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
-	if err != nil {
-		return fmt.Errorf("Could not find current user: %v", err)
 	}
 
 	url := cmd.Args[0]
@@ -184,15 +175,11 @@ func handlerFollow(s *state, cmd command) error {
 	return nil
 }
 
-func handlerFollowing(s *state, cmd command) error {
+func handlerFollowing(s *state, cmd command, user database.User) error {
 	if len(cmd.Args) != 0 {
 		return fmt.Errorf("usage: %s", cmd.Name)
 	}
-	user, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
-	if err != nil {
-		return fmt.Errorf("Failed to get current user: %v\n", err)
-	}
-
+	
 	userid := user.ID
 	followed_feeds, err := s.db.GetFeedFollowsForUser(context.Background(), userid)
 	if err != nil {
@@ -203,7 +190,29 @@ func handlerFollowing(s *state, cmd command) error {
 		fmt.Printf("- %s\n", followed_feed.FeedName)
 	}
 	return nil
+}
 
+func handlerUnfollow(s *state, cmd command, user database.User) error {
+	if len(cmd.Args) != 1 {
+		return fmt.Errorf("usage: %s <url>", cmd.Name)
+	}
+	url := cmd.Args[0]
+	userid := user.ID
+	feed, err := s.db.GetFeed(context.Background(), url)
+	if err != nil {
+		return fmt.Errorf("Error retrieving feed: %v\n", err)
+	}
+	feedid := feed.ID
+
+	unfollow_args := database.UnfollowParams{
+		UserID: userid,
+		FeedID: feedid, 
+	}
+	err = s.db.Unfollow(context.Background(), unfollow_args)
+	if err != nil {
+		return fmt.Errorf("Could not unfollow: %v", err)
+	}
+	return nil
 }
 
 func handlerReset(s *state, cmd command) error {
