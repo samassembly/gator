@@ -7,9 +7,9 @@ import (
 	"github.com/samassembly/gator/internal/database"
 	"github.com/samassembly/gator/internal/rss"
 	"github.com/google/uuid"
-
 )
 
+//set a registered db user as the current use in the configuration
 func handlerLogin(s *state, cmd command) error {
 	if len(cmd.Args) != 1 {
 		return fmt.Errorf("usage: %s <name>", cmd.Name)
@@ -30,6 +30,7 @@ func handlerLogin(s *state, cmd command) error {
 	return nil
 }
 
+//register a new user in the db
 func handlerRegister(s *state, cmd command) error {
 	if len(cmd.Args) != 1 {
 		return fmt.Errorf("usage: %s <name>", cmd.Name)
@@ -61,6 +62,7 @@ func handlerRegister(s *state, cmd command) error {
 	return nil
 }
 
+//retrieve users in the db
 func handlerUsers(s *state, cmd command) error {
 	users, err := s.db.GetUsers(context.Background())
 	if err != nil {
@@ -77,6 +79,7 @@ func handlerUsers(s *state, cmd command) error {
 	return nil
 }
 
+//fetch the feed for a given url
 func handlerAgg(s *state, cmd command) error {
 	feed, err := rss.FetchFeed(context.Background(), "https://www.wagslane.dev/index.xml")
 	if err != nil {
@@ -86,6 +89,7 @@ func handlerAgg(s *state, cmd command) error {
 	return nil
 }
 
+//add a specified feed to the db 
 func handlerAddFeed(s *state, cmd command, user database.User) error {
 	userid := user.ID
 
@@ -133,6 +137,7 @@ func handlerAddFeed(s *state, cmd command, user database.User) error {
 	return nil
 }
 
+//return feeds in database
 func handlerFeeds(s *state, cmd command) error {
 	feeds, err := s.db.GetFeeds(context.Background())
 	if err != nil {
@@ -142,6 +147,7 @@ func handlerFeeds(s *state, cmd command) error {
 	return nil
 }
 
+//create an entry in the feed_follow table for the current user given a url
 func handlerFollow(s *state, cmd command, user database.User) error {
 	if len(cmd.Args) != 1 {
 		return fmt.Errorf("usage: %s <url>", cmd.Name)
@@ -175,6 +181,7 @@ func handlerFollow(s *state, cmd command, user database.User) error {
 	return nil
 }
 
+//return the names of followed feeds for the current user
 func handlerFollowing(s *state, cmd command, user database.User) error {
 	if len(cmd.Args) != 0 {
 		return fmt.Errorf("usage: %s", cmd.Name)
@@ -192,6 +199,7 @@ func handlerFollowing(s *state, cmd command, user database.User) error {
 	return nil
 }
 
+//unfollow a specified feed for the current user
 func handlerUnfollow(s *state, cmd command, user database.User) error {
 	if len(cmd.Args) != 1 {
 		return fmt.Errorf("usage: %s <url>", cmd.Name)
@@ -215,6 +223,7 @@ func handlerUnfollow(s *state, cmd command, user database.User) error {
 	return nil
 }
 
+//reset the database
 func handlerReset(s *state, cmd command) error {
 	err := s.db.DeleteUsers(context.Background())
 	if err != nil {
