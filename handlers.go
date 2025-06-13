@@ -117,7 +117,7 @@ func scrapeFeed(db *database.Queries, feed database.Feed) {
 		return
 	}
 
-	feedData, err := FetchFeed(context.Background(), feed.Url)
+	feedData, err := rss.FetchFeed(context.Background(), feed.Url)
 	if err != nil {
 		log.Printf("Couldn't collect feed %s: %v", feed.Name, err)
 		return
