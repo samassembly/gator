@@ -5,6 +5,9 @@ import (
 	"time"
 	"context"
 	"log"
+	"strings"
+	"strconv"
+	"database/sql"
 	"github.com/samassembly/gator/internal/database"
 	"github.com/samassembly/gator/internal/rss"
 	"github.com/google/uuid"
@@ -123,7 +126,35 @@ func scrapeFeed(db *database.Queries, feed database.Feed) {
 		return
 	}
 	for _, item := range feedData.Channel.Item {
-		fmt.Printf("Found post: %s\n", item.Title)
+		//fmt.Printf("Found post: %s\n", item.Title)
+		publishedAt := sql.NullTime{}
+		if t, err := time.Parse(time.RFC1123Z, item.PubDate); err == nil {
+			publishedAt = sql.NullTime{
+				Time:  t,
+				Valid: true,
+			}
+		}
+		_, err = db.CreatePost(context.Background(), database.CreatePostParams{
+			ID:        uuid.New(),
+			CreatedAt: time.Now().UTC(),
+			UpdatedAt: time.Now().UTC(),
+			FeedID:    feed.ID,
+			Title:     item.Title,
+			Description: sql.NullString{
+				String: item.Description,
+				Valid:  true,
+			},
+			Url:         item.Link,
+			PublishedAt: publishedAt,
+		})
+		if err != nil {
+			if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
+				continue
+			}
+			log.Printf("Couldn't create post: %v", err)
+			continue
+		}
+
 	}
 	log.Printf("Feed %s collected, %v posts found", feed.Name, len(feedData.Channel.Item))
 }
@@ -258,6 +289,37 @@ func handlerUnfollow(s *state, cmd command, user database.User) error {
 	err = s.db.Unfollow(context.Background(), unfollow_args)
 	if err != nil {
 		return fmt.Errorf("Could not unfollow: %v", err)
+	}
+	return nil
+}
+
+//browse through posts saved in the database
+func handlerBrowse(s *state, cmd command, user database.User) error {
+	//limit := 2
+	var limit int32 = 2
+	if len(cmd.Args) != 0 {
+		strVal := cmd.Args[0]
+		num, err := strconv.Atoi(strVal)
+	if err != nil {
+		return fmt.Errorf("invalid number: %v", err)
+	}
+	if num != 0 {
+		limit = int32(num)
+	} 
+	}
+	userid := user.ID
+	GetPostsForUserParams := database.GetPostsForUserParams{
+		UserID: userid,
+		Limit: limit,
+	}
+
+	posts, err := s.db.GetPostsForUser(context.Background(), GetPostsForUserParams)
+	if err != nil {
+		return fmt.Errorf("Error retrieving posts: %v\n", err)
+	}
+
+	for _, post := range posts {
+		fmt.Printf("%v", post)
 	}
 	return nil
 }
