@@ -124,7 +124,7 @@ go install github.com/pressly/goose/v3/cmd/goose@latest
 ```
 - Navigate from your gator base repo to 
 ```bash 
-./sql/schema
+cd ./sql/schema
 ```
 - Run the Up migration: 
 ```bash 
