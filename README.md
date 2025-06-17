@@ -146,3 +146,61 @@ cd ~
 {"db_url":"postgres://<username>:<password>@localhost:5432/gator?sslmode=disable","current_user_name":""}
 ```
 - The field for current_user_name will be blank for this step, we can set this with a gator command
+
+## Gator Commands
+
+#### Register
+This command registers a new user to use the gator program
+```bash
+gator register <username>
+```
+#### Login
+Use this command to change the current user to another registered user
+```bash 
+gator login <username>
+```
+#### Users
+Prints out all registered users
+```bash
+gator users
+```
+#### Add Feed
+Adds an RSS feed to the gator database
+```bash
+gator addfeed '<FeedName>' '<FeedURL>'
+```
+#### Feeds
+Prints out all RSS feeds in gator database
+```bash
+gator feeds
+```
+#### Follow
+Follows a given feed for the current user
+```bash
+gator follow <URL>
+```
+#### Following
+Prints all followed feeds for the current user
+```bash
+gator following
+```
+#### Unfollow
+Unfollow given feed for the current user
+```bash
+gator unfollow <URL>
+```
+#### Browse
+Shows recent posts on followed feeds for given user, can be provided a limit
+```bash
+gator browse <Limit>
+```
+#### Aggregate
+Runs in an infinite loop, retrieves posts from feeds on a given time interval
+```bash
+gator agg <Interval>
+```
+#### Reset
+Used for testing in dev environment, removes all values from database tables
+```bash
+gator reset
+```
